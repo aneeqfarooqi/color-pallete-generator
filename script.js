@@ -1,51 +1,70 @@
-const converterForm = document.getElementById("converter-form");
-const fromCurrency = document.getElementById("from-currency");
-const toCurrency = document.getElementById("to-currency");
-const amountInput = document.getElementById("amount");
-const resultDiv = document.getElementById("result");
 
-window.addEventListener("load", fetchCurrencies);
+const generateBtn = document.getElementById("generate-btn");
+const paletteContainer = document.querySelector(".palette-container");
 
-converterForm.addEventListener("submit", convertCurrency);
+generateBtn.addEventListener("click", generatePalette);
 
-async function fetchCurrencies() {
-  // https://api.exchangerate-api.com/v4/latest/USD
-  const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
-  const data = await response.json();
+paletteContainer.addEventListener("click", function (e) {
+  if (e.target.classList.contains("copy-btn")) {
+    const hexValue = e.target.previousElementSibling.textContent;
 
-  console.log(data);
-  const currencyOptions = Object.keys(data.rates);
+    navigator.clipboard
+      .writeText(hexValue)
+      .then(() => showCopySuccess(e.target))
+      .catch((err) => console.log(err));
+  } else if (e.target.classList.contains("color")) {
+    const hexValue = e.target.nextElementSibling.querySelector(".hex-value").textContent;
+    navigator.clipboard
+      .writeText(hexValue)
+      .then(() => showCopySuccess(e.target.nextElementSibling.querySelector(".copy-btn")))
+      .catch((err) => console.log(err));
+  }
+});
 
-  currencyOptions.forEach((currency) => {
-    const option1 = document.createElement("option");
-    option1.value = currency;
-    option1.textContent = currency;
-    fromCurrency.appendChild(option1);
+function showCopySuccess(element) {
+  element.classList.remove("far", "fa-copy");
+  element.classList.add("fas", "fa-check");
 
-    const option2 = document.createElement("option");
-    option2.value = currency;
-    option2.textContent = currency;
-    toCurrency.appendChild(option2);
+  element.style.color = "#48bb78";
+
+  setTimeout(() => {
+    element.classList.remove("fas", "fa-check");
+    element.classList.add("far", "fa-copy");
+    element.style.color = "";
+  }, 1500);
+}
+
+function generatePalette() {
+  const colors = [];
+
+  for (let i = 0; i < 5; i++) {
+    colors.push(generateRandomColor());
+  }
+
+  updatePaletteDisplay(colors);
+}
+
+function generateRandomColor() {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+function updatePaletteDisplay(colors) {
+  const colorBoxes = document.querySelectorAll(".color-box");
+
+  colorBoxes.forEach((box, index) => {
+    const color = colors[index];
+    const colorDiv = box.querySelector(".color");
+    const hexValue = box.querySelector(".hex-value");
+
+    colorDiv.style.backgroundColor = color;
+    hexValue.textContent = color;
   });
 }
 
-async function convertCurrency(e) {
-  e.preventDefault();
-
-  const amount = parseFloat(amountInput.value);
-  const fromCurrencyValue = fromCurrency.value;
-  const toCurrencyValue = toCurrency.value;
-
-  if (amount < 0) {
-    alert("Please ener a valid amount");
-    return;
-  }
-
-  const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrencyValue}`);
-  const data = await response.json();
-
-  const rate = data.rates[toCurrencyValue];
-  const convertedAmount = (amount * rate).toFixed(2);
-
-  resultDiv.textContent = `${amount} ${fromCurrencyValue} = ${convertedAmount} ${toCurrencyValue}`;
-}
+// generatePalette();
